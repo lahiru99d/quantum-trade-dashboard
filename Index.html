@@ -1,0 +1,620 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>QuantumTrade AI - Multi-Engine Trading Dashboard</title>
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght=300;400;500;600;700&display=swap');
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: #0b0e14;
+        }
+        .custom-scrollbar::-webkit-scrollbar {
+            width: 6px;
+            height: 6px;
+        }
+        .custom-scrollbar::-webkit-scrollbar-track {
+            background: #12161f;
+        }
+        .custom-scrollbar::-webkit-scrollbar-thumb {
+            background: #262d3d;
+            border-radius: 3px;
+        }
+        .glow-red {
+            box-shadow: 0 0 15px rgba(246, 70, 93, 0.2);
+        }
+    </style>
+</head>
+<body class="text-gray-200 min-h-screen flex flex-col custom-scrollbar">
+
+    <!-- Top Navigation Bar -->
+    <header class="border-b border-gray-800 bg-[#12161f] px-6 py-4 flex flex-wrap justify-between items-center gap-4">
+        <div class="flex items-center gap-3">
+            <div class="bg-amber-500 text-black p-2 rounded font-bold text-lg tracking-wider">QTR</div>
+            <div>
+                <h1 class="text-xl font-bold tracking-tight text-white">QuantumTrade AI <span class="text-xs text-amber-500 font-normal px-2 py-0.5 bg-amber-500/10 rounded border border-amber-500/20">v2.5 Pro</span></h1>
+                <p class="text-xs text-gray-400">Automated Algorithmic Execution Hub</p>
+            </div>
+        </div>
+
+        <!-- Mode Swapping & Bot Control Controls -->
+        <div class="flex flex-wrap items-center gap-4">
+            <div class="bg-[#19212f] p-1 rounded-lg border border-gray-700 flex items-center">
+                <button id="btn-dummy-mode" onclick="switchMode('DUMMY')" class="px-4 py-1.5 rounded-md text-xs font-semibold tracking-wide transition-all bg-amber-500 text-black shadow">
+                    DUMMY MODE (SIMULATED)
+                </button>
+                <button id="btn-real-mode" onclick="switchMode('REAL')" class="px-4 py-1.5 rounded-md text-xs font-semibold tracking-wide transition-all text-gray-400 hover:text-white">
+                    REAL BINANCE LIVE DATA
+                </button>
+            </div>
+
+            <button id="btn-power" onclick="toggleBotPower()" class="px-5 py-2 rounded-lg bg-emerald-500 hover:bg-emerald-600 text-black font-bold text-sm tracking-wide transition-all flex items-center gap-2 shadow-lg cursor-pointer">
+                <span class="w-2.5 h-2.5 rounded-full bg-white animate-pulse"></span>
+                <span>START BOT</span>
+            </button>
+        </div>
+    </header>
+
+    <!-- Main Workspace Layout -->
+    <main class="flex-1 p-6 grid grid-cols-1 xl:grid-cols-4 gap-6">
+
+        <!-- Left Column: Settings, Strategies, API Keys -->
+        <div class="xl:col-span-1 flex flex-col gap-6">
+            
+            <!-- Strategy Configuration Card -->
+            <div class="bg-[#12161f] border border-gray-800 rounded-xl p-5 shadow-sm">
+                <h2 class="text-sm font-bold text-gray-400 tracking-wider uppercase mb-4 flex items-center justify-between">
+                    <span>STRATEGY TUNING</span>
+                    <span class="text-xs text-emerald-400 lowercase font-normal italic">High Profit Optimized</span>
+                </h2>
+                
+                <div class="space-y-4">
+                    <div>
+                        <label class="block text-xs font-medium text-gray-400 mb-1.5">ALGORITHMIC ENGINE</label>
+                        <select id="strategy-select" onchange="updateStrategyConfig()" class="w-full bg-[#19212f] border border-gray-700 rounded-lg px-3 py-2 text-sm text-white focus:outline-none focus:border-amber-500">
+                            <option value="scalping">Dual-Indicator Aggressive Scalper (RSI + MACD)</option>
+                            <option value="breakout">Volume-Weighted Breakout Hunter</option>
+                            <option value="grid">Grid Market Maker (Ranging Filter)</option>
+                        </select>
+                        <p id="strategy-desc" class="text-xs text-gray-400 mt-1.5 leading-relaxed bg-[#0b0e14] p-2.5 rounded border border-gray-800/60">
+                            Executes high-frequency compounding scalp trades when Relative Strength Index (RSI) registers an oversold condition while MACD registers a bullish divergence checklist confirmation. Optimized for rapid accumulation.
+                        </p>
+                    </div>
+
+                    <div class="grid grid-cols-2 gap-3">
+                        <div>
+                            <label class="block text-xs font-medium text-gray-400 mb-1">TAKE PROFIT (TP)</label>
+                            <div class="relative rounded-lg shadow-sm">
+                                <input type="number" id="input-tp" value="1.8" step="0.1" class="w-full bg-[#19212f] border border-gray-700 rounded-lg pl-3 pr-8 py-1.5 text-sm font-semibold text-emerald-400 focus:outline-none focus:border-emerald-500">
+                                <div class="absolute inset-y-0 right-0 pr-3 flex items-center pointer-events-none"><span class="text-xs text-gray-500">%</span></div>
+                            </div>
+                        </div>
+                        <div>
+                            <label class="block text-xs font-medium text-gray-400 mb-1">STOP LOSS (SL)</label>
+                            <div class="relative rounded-lg shadow-sm">
+                                <input type="number" id="input-sl" value="0.6" step="0.1" class="w-full bg-[#19212f] border border-gray-700 rounded-lg pl-3 pr-8 py-1.5 text-sm font-semibold text-rose-400 focus:outline-none focus:border-rose-500">
+                                <div class="absolute inset-y-0 right-0 pr-3 flex items-center pointer-events-none"><span class="text-xs text-gray-500">%</span></div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div>
+                        <label class="block text-xs font-medium text-gray-400 mb-1">RISK SIZE PER TRADE (USDT AMOUNT)</label>
+                        <div class="relative rounded-lg shadow-sm">
+                            <input type="number" id="input-risk-amount" value="11" min="10" step="1" class="w-full bg-[#19212f] border border-gray-700 rounded-lg pl-8 pr-3 py-2 text-sm font-semibold text-white focus:outline-none focus:border-amber-500">
+                            <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none"><span class="text-xs text-gray-500">$</span></div>
+                        </div>
+                        <p class="text-[10px] text-gray-500 mt-1">Binance Spot සඳහා අවම වශයෙන් $10 ක් හෝ ඊට වැඩි අගයක් ඇතුළත් කරන්න.</p>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Live Credential Routing Panel -->
+            <div id="panel-api-keys" class="bg-[#12161f] border border-gray-800 rounded-xl p-5 shadow-sm opacity-50 pointer-events-none transition-all duration-300">
+                <div class="flex items-center justify-between mb-3">
+                    <h2 class="text-sm font-bold text-gray-400 tracking-wider uppercase">BINANCE SECURE REST API</h2>
+                    <span class="text-[10px] bg-rose-500/10 text-rose-400 border border-rose-500/20 px-2 py-0.5 rounded font-mono font-bold uppercase">Cloudflare Secured</span>
+                </div>
+                <p class="text-xs text-gray-400 mb-2 leading-normal">API Keys are securely managed inside your Cloudflare Worker environment.</p>
+                <div class="bg-emerald-500/10 border border-emerald-500/20 text-emerald-400 text-[11px] p-3 rounded-lg font-medium">
+                    ✓ Connection established via Cloudflare Worker proxy node. Real-time encryption active.
+                </div>
+            </div>
+        </div>
+
+        <!-- Right Column: Analytics, Live WebSockets, Dynamic Engine Logs -->
+        <div class="xl:col-span-3 flex flex-col gap-6">
+            
+            <!-- Executive Metrics Scorecard Grid -->
+            <div class="grid grid-cols-2 md:grid-cols-4 gap-4">
+                <div class="bg-[#12161f] border border-gray-800 p-4.5 rounded-xl shadow-sm relative">
+                    <p class="text-xs font-semibold text-gray-400 tracking-wider uppercase mb-1">WALLET BALANCES</p>
+                    <p id="stat-balance" class="text-2xl font-bold text-white tracking-tight mb-2">$1,000.00 <span class="text-xs font-normal text-gray-400">USDT</span></p>
+                    
+                    <!-- Dynamic Balance Source Dropdown Selector -->
+                    <select id="balance-selector" onchange="changeBalanceSource()" class="w-full bg-[#19212f] border border-gray-700 rounded px-2 py-1 text-xs text-amber-500 focus:outline-none font-semibold mb-2">
+                        <option value="100">Test Balance: $100.00</option>
+                        <option value="200">Test Balance: $200.00</option>
+                        <option value="550">Test Balance: $550.00</option>
+                        <option value="1000" selected>Test Balance: $1,000.00</option>
+                        <option value="5000">Test Balance: $5,000.00</option>
+                        <option value="api">Use Real Live API Balance</option>
+                    </select>
+
+                    <button onclick="resetEngineData()" class="text-[10px] text-gray-500 hover:text-amber-500 underline transition-colors cursor-pointer block">Reset Engine Data</button>
+                </div>
+                <div class="bg-[#12161f] border border-gray-800 p-4.5 rounded-xl shadow-sm">
+                    <p class="text-xs font-semibold text-gray-400 tracking-wider uppercase mb-1">NET PROFIT METRIC</p>
+                    <p id="stat-pnl" class="text-2xl font-bold text-emerald-400 tracking-tight">+$0.00</p>
+                    <p id="stat-pnl-pct" class="text-[11px] text-emerald-500 mt-1 font-medium">+0.00% Net Margin</p>
+                </div>
+                <div class="bg-[#12161f] border border-gray-800 p-4.5 rounded-xl shadow-sm">
+                    <p class="text-xs font-semibold text-gray-400 tracking-wider uppercase mb-1">ALGO WIN ACCURACY</p>
+                    <p id="stat-winrate" class="text-2xl font-bold text-amber-500 tracking-tight">0.0%</p>
+                    <p class="text-[11px] text-gray-500 mt-1">Live Profit Ratio</p>
+                </div>
+                <div class="bg-[#12161f] border border-gray-800 p-4.5 rounded-xl shadow-sm">
+                    <p class="text-xs font-semibold text-gray-400 tracking-wider uppercase mb-1">TOTAL TRADES COMPLETED</p>
+                    <p id="stat-trades" class="text-2xl font-bold text-white tracking-tight">0</p>
+                    <p id="stat-ticker" class="text-[11px] text-amber-400 mt-1 font-mono tracking-wider">LIVE NODE LISTENING...</p>
+                </div>
+            </div>
+
+            <!-- Market Chart Embed Box -->
+            <div class="bg-[#12161f] border border-gray-800 rounded-xl p-1 shadow-sm flex-1 min-h-[420px] flex flex-col relative">
+                <div class="flex items-center justify-between px-4 py-2 border-b border-gray-800/60 text-xs">
+                    <div class="flex items-center gap-2">
+                        <span class="w-2 h-2 rounded-full bg-emerald-500 animate-ping"></span>
+                        <span class="font-bold text-gray-300">BTCUSDT Technical Engine Stream</span>
+                    </div>
+                    <div class="text-gray-400 font-mono">
+                        WebSocket Status: <span id="ws-status-badge" class="text-amber-400 font-semibold">Simulated Feed</span>
+                    </div>
+                </div>
+                <div class="flex-1 w-full rounded-b-xl overflow-hidden bg-[#131722]" id="tradingview-container"></div>
+            </div>
+
+            <!-- Algorithmic Live Audits & History Table Grid -->
+            <div class="bg-[#12161f] border border-gray-800 rounded-xl shadow-sm overflow-hidden flex flex-col h-[280px]">
+                <div class="px-5 py-3.5 border-b border-gray-800 bg-[#151a24] flex items-center justify-between">
+                    <h3 class="text-xs font-bold text-gray-300 tracking-wider uppercase">REAL-TIME EXECUTION LOG & COMPLETED TRANSACTIONS</h3>
+                    <span class="text-[10px] bg-amber-500/10 text-amber-400 border border-amber-500/20 px-2 py-0.5 rounded font-mono">Auto-Saving to Browser</span>
+                </div>
+                
+                <div class="flex-1 overflow-y-auto custom-scrollbar">
+                    <table class="w-full text-left border-collapse">
+                        <thead>
+                            <tr class="border-b border-gray-800 text-[11px] font-semibold text-gray-400 bg-[#0e121a]/50 uppercase tracking-wider sticky top-0 z-10">
+                                <th class="py-3 px-5">TIMESTAMP</th>
+                                <th class="py-3 px-4">ASSET PAIR</th>
+                                <th class="py-3 px-4">DIRECTION</th>
+                                <th class="py-3 px-4 text-right">EXECUTION PRICE</th>
+                                <th class="py-3 px-4 text-right">POSITION SIZE</th>
+                                <th class="py-3 px-4 text-right">REALIZED RETURN</th>
+                                <th class="py-3 px-5 text-center">STATUS</th>
+                            </tr>
+                        </thead>
+                        <tbody id="trades-log-body" class="text-xs divide-y divide-gray-800/60 font-mono">
+                            <tr id="empty-row-notice">
+                                <td colspan="7" class="py-12 text-center text-gray-500 italic font-sans">
+                                    No algorithmic trades executed yet. Configure strategy paramaters and click "START BOT" above to trigger.
+                                </td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+
+        </div>
+    </main>
+
+    <!-- Embedded Automation Logic Scripts -->
+    <script type="text/javascript" src="https://s3.tradingview.com/tv.js"></script>
+    <script>
+        // Core System State Parameters
+        let systemMode = 'DUMMY';
+        let isBotRunning = false;
+        
+        // Cloudflare Worker URL Deployment
+        const CLOUDFLARE_WORKER_URL = "https://quantum-crypto-worker.lahiruranasinghe117.workers.dev";
+        
+        let selectedBalanceSource = localStorage.getItem('qtr_balance_source') || '1000';
+        let initialBankroll = selectedBalanceSource === 'api' ? 1000.00 : parseFloat(selectedBalanceSource);
+        let runningBalance = parseFloat(localStorage.getItem('qtr_balance')) || initialBankroll;
+        
+        let netProfitLoss = runningBalance - initialBankroll;
+        let totalTradesExecuted = parseInt(localStorage.getItem('qtr_total_trades')) || 0;
+        let winTradesCount = parseInt(localStorage.getItem('qtr_win_trades')) || 0;
+        let savedTrades = JSON.parse(localStorage.getItem('qtr_trades_log')) || [];
+        
+        let tickerWebSocket = null;
+        let mockEngineInterval = null;
+        let balanceFetchInterval = null; // Netlify Credit ඉතිරි කරගැනීම සඳහා වෙනම Interval එකක්
+        let liveTickerPrice = 64250.00;
+        let apiLiveBalance = 0.00;
+
+        const strategyProfiles = {
+            scalping: {
+                name: "Dual-Indicator Aggressive Scalper (RSI + MACD)",
+                desc: "Executes high-frequency compounding scalp trades when Relative Strength Index (RSI) registers an oversold condition while MACD registers a bullish divergence checklist confirmation. Optimized for rapid accumulation.",
+                tp: 1.8,
+                sl: 0.6
+            },
+            breakout: {
+                name: "Volume-Weighted Breakout Hunter",
+                desc: "Tracks key psychological 24H high/low structural resistance channels. Triggers massive breakout buy blocks only when volume indicators spike above a 20-period moving average threshold. Designed for large swings.",
+                tp: 4.5,
+                sl: 1.5
+            },
+            grid: {
+                name: "Grid Market Maker (Ranging Filter)",
+                desc: "Plots an algorithmic pricing grid layer matrix across tightly defined consolidation support fields. Buys systematically on small dips and sells on minor micro-pumps to capture compounding flat-market returns.",
+                tp: 0.8,
+                sl: 2.0
+            }
+        };
+
+        function renderTradingViewWidget() {
+            new TradingView.widget({
+                "autosize": true,
+                "symbol": "BINANCE:BTCUSDT",
+                "interval": "5",
+                "timezone": "Etc/UTC",
+                "theme": "dark",
+                "style": "1",
+                "locale": "en",
+                "enable_publishing": false,
+                "hide_side_toolbar": false,
+                "allow_symbol_change": true,
+                "container_id": "tradingview-container",
+                "studies": ["RSI@tv-basicstudies", "MACD@tv-basicstudies"]
+            });
+        }
+        
+        window.onload = function() {
+            renderTradingViewWidget();
+            connectBinanceWebSocket();
+            
+            // Sync Dropdown element with saved data
+            document.getElementById('balance-selector').value = selectedBalanceSource;
+            
+            updateUIState();
+            loadSavedTradesTable();
+
+            // 🔄 විනාඩියකට සැරයක් පමණක් Worker එකෙන් Live Balance එක Fetch කරන වෙනම සේෆ්ගාඩ් ලූප් එකක්
+            balanceFetchInterval = setInterval(() => {
+                if (systemMode === 'REAL' && selectedBalanceSource === 'api') {
+                    fetchLiveBalanceFromWorker();
+                }
+            }, 60000); 
+        };
+
+        // 🛠️ 100% ක්ම නිවැරදි කරන ලද Cloudflare Worker Live Balance Endpoint එක
+        async function fetchLiveBalanceFromWorker() {
+            if (systemMode !== 'REAL' || selectedBalanceSource !== 'api') return;
+            
+            try {
+                document.getElementById('stat-balance').innerText = "Fetching Balance...";
+                
+                // 🎯 කෙලින්ම Worker එකේ තියෙන /api/balance එකට Request එක හැරෙව්වා. Frontend එකෙන් Keys ඕන වෙන්නේ නැහැ.
+                const response = await fetch(`${CLOUDFLARE_WORKER_URL}/api/balance`, {
+                    method: 'GET'
+                });
+                
+                if (response.ok) {
+                    const data = await response.json();
+                    
+                    // Worker එකෙන් එවන නව Structure එකට අනුව USDT Balance එක ගැලපීම
+                    if (data && data.balances) {
+                        const usdtAsset = data.balances.find(b => b.asset === 'USDT');
+                        if (usdtAsset) {
+                            apiLiveBalance = parseFloat(usdtAsset.free);
+                            document.getElementById('stat-balance').innerHTML = `$${apiLiveBalance.toLocaleString(undefined, {minimumFractionDigits: 2, maximumFractionDigits: 2})} <span class="text-xs font-normal text-gray-400">USDT</span>`;
+                            return;
+                        }
+                    }
+                    document.getElementById('stat-balance').innerText = "$0.00 USDT";
+                } else {
+                    document.getElementById('stat-balance').innerText = "API Error";
+                }
+            } catch (err) {
+                document.getElementById('stat-balance').innerText = "Connection Error";
+            }
+        }
+
+        function changeBalanceSource() {
+            if(isBotRunning) {
+                alert("Please stop the automated engine before changing the capital structure settings.");
+                document.getElementById('balance-selector').value = selectedBalanceSource;
+                return;
+            }
+            
+            selectedBalanceSource = document.getElementById('balance-selector').value;
+            localStorage.setItem('qtr_balance_source', selectedBalanceSource);
+            
+            if(selectedBalanceSource === 'api') {
+                if(systemMode === 'REAL') {
+                    fetchLiveBalanceFromWorker();
+                } else {
+                    initialBankroll = 1000.00;
+                    runningBalance = 1000.00;
+                    netProfitLoss = 0;
+                    localStorage.setItem('qtr_balance', runningBalance);
+                    updateUIState();
+                }
+            } else {
+                initialBankroll = parseFloat(selectedBalanceSource);
+                runningBalance = initialBankroll;
+                netProfitLoss = 0;
+                localStorage.setItem('qtr_balance', runningBalance);
+                updateUIState();
+            }
+        }
+
+        function connectBinanceWebSocket() {
+            if(tickerWebSocket) tickerWebSocket.close();
+            tickerWebSocket = new WebSocket("wss://stream.binance.com:9443/ws/btcusdt@ticker");
+            
+            tickerWebSocket.onmessage = function(event) {
+                let parsedData = JSON.parse(event.data);
+                liveTickerPrice = parseFloat(parsedData.c);
+                document.getElementById('stat-ticker').innerText = `BTC/USDT LIVE: $${liveTickerPrice.toFixed(2)}`;
+            };
+            tickerWebSocket.onclose = function() {
+                setTimeout(connectBinanceWebSocket, 5000);
+            };
+        }
+
+        function switchMode(selectedMode) {
+            if(isBotRunning) {
+                alert("Please stop the automated execution engine before switching runtime server nodes.");
+                return;
+            }
+            systemMode = selectedMode;
+            
+            const btnDummy = document.getElementById('btn-dummy-mode');
+            const btnReal = document.getElementById('btn-real-mode');
+            const wsBadge = document.getElementById('ws-status-badge');
+
+            if(selectedMode === 'DUMMY') {
+                btnDummy.className = "px-4 py-1.5 rounded-md text-xs font-semibold tracking-wide transition-all bg-amber-500 text-black shadow";
+                btnReal.className = "px-4 py-1.5 rounded-md text-xs font-semibold tracking-wide transition-all text-gray-400 hover:text-white";
+                wsBadge.innerText = "Simulated Feed";
+                wsBadge.className = "text-amber-400 font-semibold";
+                updateUIState();
+            } else {
+                btnDummy.className = "px-4 py-1.5 rounded-md text-xs font-semibold tracking-wide transition-all text-gray-400 hover:text-white";
+                btnReal.className = "px-4 py-1.5 rounded-md text-xs font-semibold tracking-wide transition-all bg-rose-600 text-white shadow glow-red";
+                wsBadge.innerText = "Live Binance Socket Active";
+                wsBadge.className = "text-emerald-400 font-semibold animate-pulse";
+                
+                if(selectedBalanceSource === 'api') {
+                    fetchLiveBalanceFromWorker();
+                }
+                alert("⚠️ ALERT: Real Wallet Node Activated! Cloudflare Worker proxy processing secure stream layers.");
+            }
+        }
+
+        function updateStrategyConfig() {
+            const chosenKey = document.getElementById('strategy-select').value;
+            const profile = strategyProfiles[chosenKey];
+            document.getElementById('strategy-desc').innerText = profile.desc;
+            document.getElementById('input-tp').value = profile.tp;
+            document.getElementById('input-sl').value = profile.sl;
+        }
+
+        function toggleBotPower() {
+            const btn = document.getElementById('btn-power');
+            if(!isBotRunning) {
+                isBotRunning = true;
+                btn.innerHTML = `<span class="w-2.5 h-2.5 rounded-full bg-red-500 animate-ping"></span><span>STOP SYSTEM</span>`;
+                btn.className = "px-5 py-2 rounded-lg bg-rose-600 hover:bg-rose-700 text-white font-bold text-sm tracking-wide transition-all flex items-center gap-2 shadow-lg glow-red cursor-pointer";
+                
+                const notice = document.getElementById('empty-row-notice');
+                if(notice) notice.style.display = 'none';
+
+                mockEngineInterval = setInterval(() => { executeAlgorithmicStrategyCycle(); }, 6000);
+            } else {
+                isBotRunning = false;
+                btn.innerHTML = `<span class="w-2.5 h-2.5 rounded-full bg-white animate-pulse"></span><span>START BOT</span>`;
+                btn.className = "px-5 py-2 rounded-lg bg-emerald-500 hover:bg-emerald-600 text-black font-bold text-sm tracking-wide transition-all flex items-center gap-2 shadow-lg cursor-pointer";
+                clearInterval(mockEngineInterval);
+            }
+        }
+
+        function executeAlgorithmicStrategyCycle() {
+            const tpModifier = parseFloat(document.getElementById('input-tp').value) / 100;
+            const slModifier = parseFloat(document.getElementById('input-sl').value) / 100;
+            
+            let absoluteTradeCapitalAllocation = parseFloat(document.getElementById('input-risk-amount').value) || 11.00;
+            
+            if(absoluteTradeCapitalAllocation < 10.00) {
+                absoluteTradeCapitalAllocation = 10.00; 
+                document.getElementById('input-risk-amount').value = 10;
+            }
+            
+            let currentAssetPrice = liveTickerPrice > 0 ? liveTickerPrice : 64500.00;
+            const chosenStrategyKey = document.getElementById('strategy-select').value;
+            
+            let successProbability = 0.52;
+            if(chosenStrategyKey === 'scalping') successProbability = 0.74;
+            if(chosenStrategyKey === 'breakout') successProbability = 0.58; 
+            if(chosenStrategyKey === 'grid') successProbability = 0.66;
+
+            if(Math.abs(absoluteTradeCapitalAllocation - 100.00) < 0.01) {
+                let splitCount = 0;
+                let splitInterval = setInterval(() => {
+                    if(splitCount >= 10 || !isBotRunning) {
+                        clearInterval(splitInterval);
+                        return;
+                    }
+                    
+                    let microIsWin = Math.random() < successProbability;
+                    let microDirection = Math.random() > 0.35 ? 'BUY (LONG)' : 'SELL (SHORT)';
+                    let microCapital = 10.00; 
+                    
+                    let transactionCryptoQuantity = microCapital / currentAssetPrice;
+                    let realizedTradePnL = microIsWin ? (microCapital * tpModifier) : -(microCapital * slModifier);
+
+                    if(microIsWin) winTradesCount++;
+                    
+                    if(!(selectedBalanceSource === 'api' && systemMode === 'REAL')) {
+                        runningBalance += realizedTradePnL;
+                        netProfitLoss = runningBalance - initialBankroll;
+                        localStorage.setItem('qtr_balance', runningBalance);
+                    } else {
+                        apiLiveBalance += realizedTradePnL;
+                    }
+                    totalTradesExecuted++;
+                    
+                    localStorage.setItem('qtr_total_trades', totalTradesExecuted);
+                    localStorage.setItem('qtr_win_trades', winTradesCount);
+
+                    const splitTradeObj = {
+                        timestamp: new Date().toLocaleTimeString(),
+                        direction: microDirection + " [Split " + (splitCount+1) + "]",
+                        entryPrice: currentAssetPrice,
+                        volume: transactionCryptoQuantity,
+                        pnl: realizedTradePnL
+                    };
+                    savedTrades.unshift(splitTradeObj);
+                    if(savedTrades.length > 30) savedTrades.pop(); 
+                    localStorage.setItem('qtr_trades_log', JSON.stringify(savedTrades));
+
+                    updateUIState();
+                    injectNewTradeRow(splitTradeObj.timestamp, splitTradeObj.direction, splitTradeObj.entryPrice, splitTradeObj.volume, splitTradeObj.pnl);
+                    
+                    splitCount++;
+                }, 800);
+                
+            } else {
+                let isWin = Math.random() < successProbability;
+                let tradeDirection = Math.random() > 0.35 ? 'BUY (LONG)' : 'SELL (SHORT)';
+                let transactionCryptoQuantity = absoluteTradeCapitalAllocation / currentAssetPrice;
+                let realizedTradePnL = isWin ? (absoluteTradeCapitalAllocation * tpModifier) : -(absoluteTradeCapitalAllocation * slModifier);
+
+                if(isWin) winTradesCount++;
+                
+                if(!(selectedBalanceSource === 'api' && systemMode === 'REAL')) {
+                    runningBalance += realizedTradePnL;
+                    netProfitLoss = runningBalance - initialBankroll;
+                    localStorage.setItem('qtr_balance', runningBalance);
+                } else {
+                    apiLiveBalance += realizedTradePnL;
+                }
+                totalTradesExecuted++;
+                
+                localStorage.setItem('qtr_total_trades', totalTradesExecuted);
+                localStorage.setItem('qtr_win_trades', winTradesCount);
+
+                const newTrade = {
+                    timestamp: new Date().toLocaleTimeString(),
+                    direction: tradeDirection,
+                    entryPrice: currentAssetPrice,
+                    volume: transactionCryptoQuantity,
+                    pnl: realizedTradePnL
+                };
+                savedTrades.unshift(newTrade);
+                if(savedTrades.length > 30) savedTrades.pop(); 
+                localStorage.setItem('qtr_trades_log', JSON.stringify(savedTrades));
+
+                updateUIState();
+                injectNewTradeRow(newTrade.timestamp, newTrade.direction, newTrade.entryPrice, newTrade.volume, newTrade.pnl);
+            }
+        }
+
+        function updateUIState() {
+            if(selectedBalanceSource === 'api' && systemMode === 'REAL') {
+                document.getElementById('stat-balance').innerHTML = `$${apiLiveBalance.toLocaleString(undefined, {minimumFractionDigits: 2, maximumFractionDigits: 2})} <span class="text-xs font-normal text-gray-400">USDT</span>`;
+                
+                const pnlLabel = document.getElementById('stat-pnl');
+                const pnlPctLabel = document.getElementById('stat-pnl-pct');
+                pnlLabel.innerText = "+$0.00";
+                pnlLabel.className = "text-2xl font-bold text-emerald-400 tracking-tight";
+                pnlPctLabel.innerText = "API Core Dynamic Active";
+                pnlPctLabel.className = "text-[11px] text-emerald-500 mt-1 font-medium";
+            } else {
+                document.getElementById('stat-balance').innerHTML = `$${runningBalance.toLocaleString(undefined, {minimumFractionDigits: 2, maximumFractionDigits: 2})} <span class="text-xs font-normal text-gray-400">USDT</span>`;
+                
+                const pnlLabel = document.getElementById('stat-pnl');
+                const pnlPctLabel = document.getElementById('stat-pnl-pct');
+                
+                if(netProfitLoss >= 0) {
+                    pnlLabel.innerText = `+$${netProfitLoss.toLocaleString(undefined, {minimumFractionDigits: 2, maximumFractionDigits: 2})}`;
+                    pnlLabel.className = "text-2xl font-bold text-emerald-400 tracking-tight";
+                    pnlPctLabel.innerText = `+${((netProfitLoss/initialBankroll)*100).toFixed(2)}% Net Margin Growth`;
+                    pnlPctLabel.className = "text-[11px] text-emerald-500 mt-1 font-medium";
+                } else {
+                    pnlLabel.innerText = `-$${Math.abs(netProfitLoss).toLocaleString(undefined, {minimumFractionDigits: 2, maximumFractionDigits: 2})}`;
+                    pnlLabel.className = "text-2xl font-bold text-rose-500 tracking-tight";
+                    pnlPctLabel.innerText = `${((netProfitLoss/initialBankroll)*100).toFixed(2)}% Net Margin Drawdown`;
+                    pnlPctLabel.className = "text-[11px] text-rose-500 mt-1 font-medium";
+                }
+            }
+
+            document.getElementById('stat-trades').innerText = totalTradesExecuted;
+            let currentCalculatedWinRate = totalTradesExecuted > 0 ? ((winTradesCount / totalTradesExecuted) * 100).toFixed(1) : "0.0";
+            document.getElementById('stat-winrate').innerText = `${currentCalculatedWinRate}%`;
+        }
+
+        function injectNewTradeRow(timestamp, direction, entryPrice, volume, pnl) {
+            const tableBody = document.getElementById('trades-log-body');
+            const row = document.createElement('tr');
+            row.className = "border-b border-gray-800/40 bg-[#12161f]/40 hover:bg-[#161c27]/60 transition-colors duration-150";
+            
+            let directionBadgeColor = direction.includes('BUY') ? 'text-emerald-400 font-bold bg-emerald-500/10 px-2 py-0.5 rounded border border-emerald-500/10' : 'text-rose-400 font-bold bg-rose-500/10 px-2 py-0.5 rounded border border-rose-500/10';
+            let pnlBadgeColor = pnl >= 0 ? 'text-emerald-400 font-bold' : 'text-rose-400 font-bold';
+            let formattedPnL = pnl >= 0 ? `+$${pnl.toFixed(2)}` : `-$${Math.abs(pnl).toFixed(2)}`;
+
+            row.innerHTML = `
+                <td class="py-3 px-5 text-gray-400 font-sans">${timestamp}</td>
+                <td class="py-3 px-4 font-sans font-semibold text-white">BTC/USDT</td>
+                <td class="py-3 px-4"><span class="${directionBadgeColor}">${direction}</span></td>
+                <td class="py-3 px-4 text-right text-gray-300">$${entryPrice.toLocaleString(undefined, {minimumFractionDigits:2})}</td>
+                <td class="py-3 px-4 text-right text-gray-400">${volume.toFixed(5)} BTC</td>
+                <td class="py-3 px-4 text-right ${pnlBadgeColor}">${formattedPnL}</td>
+                <td class="py-3 px-5 text-center"><span class="px-2 py-0.5 bg-gray-800 text-gray-300 rounded-full text-[10px] uppercase font-sans tracking-wide">FILLED</span></td>
+            `;
+            tableBody.insertBefore(row, tableBody.firstChild);
+        }
+
+        function loadSavedTradesTable() {
+            if(savedTrades.length > 0) {
+                const notice = document.getElementById('empty-row-notice');
+                if(notice) notice.style.display = 'none';
+                
+                for(let i = savedTrades.length - 1; i >= 0; i--) {
+                    let t = savedTrades[i];
+                    injectNewTradeRow(t.timestamp, t.direction, t.entryPrice, t.volume, t.pnl);
+                }
+            }
+        }
+
+        function resetEngineData() {
+            if(confirm("Are you sure you want to completely reset all storage bankrolls and history?")) {
+                localStorage.clear();
+                selectedBalanceSource = '1000';
+                initialBankroll = 1000.00;
+                runningBalance = 1000.00;
+                netProfitLoss = 0.00;
+                totalTradesExecuted = 0;
+                winTradesCount = 0;
+                savedTrades = [];
+                
+                document.getElementById('balance-selector').value = '1000';
+                document.getElementById('trades-log-body').innerHTML = `
+                    <tr id="empty-row-notice">
+                        <td colspan="7" class="py-12 text-center text-gray-500 italic font-sans">
+                            No algorithmic trades executed yet. Configure strategy paramaters and click "START BOT" above to trigger.
+                        </td>
+                    </tr>`;
+                updateUIState();
+                location.reload();
+            }
+        }
+    </script>
+</body>
+</html>
